@@ -11,7 +11,8 @@
 #define maxn 500+5
 #define maxm 40000+5
 #define init_size 20
-#define L 20000
+#define L_LS 2000
+#define L_check 400
 #define E  2.7182818285
 #define A 10
 #define arf 0.6
@@ -60,13 +61,9 @@ void insert(int u, int v) {
 }
 
 void init() {
-    string tmp;
-    cin >> tmp;
-    while (tmp != "edge") {
-        cin >> tmp;
-    }
     n = read();
     m = read();
+    m /= 2;
     for (int i = 1; i <= m; i++) {
         int u = read(), v = read();
         insert(u, v);
@@ -109,23 +106,23 @@ void init_gen(int lim, const int size) {
                 }
             }
             if (!flag) {
-                if(P[i].size<lim) {
+                if (P[i].size < lim) {
                     P[i].size++;
                     P[i].v[P[i].size].a.push_back(x);
-                }
-                else {
-                    int to_pri=rand()%lim+1;
+                } else {
+                    int to_pri = rand() % lim + 1;
                     P[i].v[to_pri].a.push_back(x);
                 }
             }
-            vis[x]=1;
+            vis[x] = 1;
         }
     }
 }
 
 void crossover(gene s1, gene s2, gene &s) {
-    int book[maxn];
-    s.size=s1.size;
+    int book[maxn], book_point[maxn];
+    memset(book_point, 0, sizeof(book_point));
+    s.size = s1.size;
     for (int i = 1; i <= s1.size; i++) {
         memset(book, 0, sizeof(book));
         int maxnum = 0, maxid;
@@ -136,8 +133,10 @@ void crossover(gene s1, gene s2, gene &s) {
                     maxid = j;
                 }
             s.v[i].a.swap(s1.v[maxid].a);
-            for (int j = 0; j < s.v[i].a.size(); j++)
+            for (int j = 0; j < s.v[i].a.size(); j++) {
                 book[s.v[i].a[j]] = 1;
+                book_point[s.v[i].a[j]] = 1;
+            }
             gene news2;
             for (int j = 1; j <= s2.size; j++) {
                 for (int k = 0, y; k < s2.v[j].a.size(); k++)
@@ -152,8 +151,10 @@ void crossover(gene s1, gene s2, gene &s) {
                     maxid = j;
                 }
             s.v[i].a.swap(s2.v[maxid].a);
-            for (int j = 0; j < s.v[i].a.size(); j++)
+            for (int j = 0; j < s.v[i].a.size(); j++) {
                 book[s.v[i].a[j]] = 1;
+                book_point[s.v[i].a[j]] = 1;
+            }
             gene news1;
             for (int j = 1; j <= s1.size; j++) {
                 for (int k = 0, y; k < s1.v[j].a.size(); k++)
@@ -163,6 +164,11 @@ void crossover(gene s1, gene s2, gene &s) {
             }
         }
     }
+    for (int i = 1; i <= n; i++)
+        if (!book_point[i]) {
+            int x = rand() % s.size + 1;
+            s.v[x].a.push_back(i);
+        }
 }
 
 bool judge(gene p) {
@@ -174,7 +180,7 @@ bool judge(gene p) {
     int q[maxm];
     q[1] = 1;
     int book[maxn];
-    memset(book,0, sizeof(book));
+    memset(book, 0, sizeof(book));
     book[1] = 1;
     while (l != r) {
         int x = q[++l];
@@ -200,7 +206,7 @@ int f(gene p) {
     int q[maxm];
     q[1] = 1;
     int book[maxn];
-    memset(book,0, sizeof(book));
+    memset(book, 0, sizeof(book));
     book[1] = 1;
     while (l != r) {
         int x = q[++l];
@@ -213,10 +219,10 @@ int f(gene p) {
             }
         }
     }
-    return ans;
+    return ans/2;
 }
 
-int find(gene p) {
+void find(gene p) {
     memset(rec_point, 0, sizeof(rec_point));
     rec_point_size = 0;
     int color[maxn], rec[maxn];
@@ -228,7 +234,7 @@ int find(gene p) {
     int q[maxm];
     q[1] = 1;
     int book[maxn];
-    memset(book,0, sizeof(book));
+    memset(book, 0, sizeof(book));
     book[1] = 1;
     while (l != r) {
         int x = q[++l];
@@ -244,7 +250,6 @@ int find(gene p) {
             }
         }
     }
-    return -1;
 }
 
 int solve_CFL(gene p) {
@@ -257,7 +262,7 @@ int solve_CFL(gene p) {
     int q[maxm];
     q[1] = 1;
     int book[maxn];
-    memset(book,0, sizeof(book));
+    memset(book, 0, sizeof(book));
     book[1] = 1;
     while (l != r) {
         int x = q[++l];
@@ -281,12 +286,14 @@ int solve_CFL(gene p) {
 void localSearch(gene &p, int iter) {
     gene best_res = p;
     int best_fun = f(best_res);
+    memset(tabutable, 0x3f, sizeof(tabutable));
     while (iter--) {
-        int tl, v = 1, nb = solve_CFL(p), new_pri = -1, new_pri_f = 0x3f;
+        int tl, v = 1, nb = solve_CFL(p), new_pri = -1, new_pri_f;
         tl = rand() % A + arf * nb;
         find(p);
         if (!rec_point_size)return;
         while (v <= rec_point_size) {
+            new_pri_f = 0x7ffff;
             for (int i = 0; i < p.v[rec_point[v].pri].a.size(); i++)
                 if (p.v[rec_point[v].pri].a[i] == rec_point[v].id) {
                     p.v[rec_point[v].pri].a.erase(p.v[rec_point[v].pri].a.begin() + i);
@@ -294,7 +301,7 @@ void localSearch(gene &p, int iter) {
                 }
             gene tmp_p;
             for (int i = 1; i <= p.size; i++)
-                if (i != rec_point[v].pri && (!tabutable[v][i])) {
+                if (i != rec_point[v].pri && (tabutable[v][i] >= iter)) {
                     tmp_p = p;
                     tmp_p.v[i].a.push_back(v);
                     if (f(tmp_p) < new_pri_f) {
@@ -302,22 +309,22 @@ void localSearch(gene &p, int iter) {
                         new_pri_f = f(tmp_p);
                     }
                 }
-            if (new_pri == -1) {
+            if(new_pri==-1) {
                 p.v[rec_point[v].pri].a.push_back(rec_point[v].id);
                 v++;
-            } else break;
+            }
+            else break;
         }
-        if (v > rec_point_size || new_pri == -1)return;
-        p.v[new_pri].a.push_back(v);
+        if (new_pri == -1) {
+            p = best_res;
+            return;
+        }
+        p.v[new_pri].a.push_back(rec_point[v].id);
         if (f(p) < best_fun) {
             best_res = p;
             best_fun = f(p);
         }
-        tabutable[v][new_pri] = iter - tl;
-        for (int i = 1; i <= n; i++)
-            for (int j = 1; j <= color_size; j++)
-                if (tabutable[i][j] >= iter)
-                    tabutable[i][j] = 0;
+        tabutable[rec_point[v].id][rec_point[v].pri] = iter - tl;
         if (judge(p))
             return;
     }
@@ -367,7 +374,7 @@ void optimize() {
 }
 
 bool check(int x) {
-    int stop_cond = L;
+    int stop_cond = L_check;
     for (int i = 1; i <= init_size; i++)
         if (judge(P[i])) {
             ans_p = P[i];
@@ -377,7 +384,7 @@ bool check(int x) {
         int p1 = rand() % init_size + 1, p2 = rand() % init_size + 1;
         gene ps;
         crossover(P[p1], P[p2], ps);
-        localSearch(ps, L);
+        localSearch(ps, L_LS);
         if (judge(ps)) {
             ans_p = ps;
             return 1;
@@ -388,7 +395,7 @@ bool check(int x) {
     return 0;
 }
 
-void output_gene(gene p){
+void output_gene(gene p) {
     cout << p.size << endl;
     for (int i = 1; i <= p.size; i++) {
         for (int j = 0; j < p.v[i].a.size(); j++)
@@ -398,6 +405,8 @@ void output_gene(gene p){
 }
 
 int main() {
+    //freopen("input.txt", "r", stdin);
+    //freopen("output.txt", "w", stdout);
     init();
     int l = 1, r = n;
     while (l <= r) {
@@ -406,8 +415,8 @@ int main() {
         init_gen(mid, init_size);
         if (check(mid))r = mid - 1;
         else l = mid + 1;
+        cout << mid << endl;
     }
-    cout << l << endl;
     output_gene(ans_p);
     return 0;
 }
