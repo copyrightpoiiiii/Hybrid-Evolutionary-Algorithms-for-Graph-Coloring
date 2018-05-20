@@ -7,3 +7,7 @@ Then we can use tabu search to optimize it.<br>
 <br>
 However, debugging this code is too hard for me. <br>
 I hope you can help me.<br>
+<br>
+upd1:<br>
+Now, the code can run normally.<br>
+However, I found the LS operator had no obvious effect on the optimization of the answer.<br>
