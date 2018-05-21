@@ -20,3 +20,6 @@ upd3:<br>
 Now, there are two main problems needs to be solved.<br>
 First, the time complexity of LS operator is too high.<br>
 Second, the algorithm to solve the distance between two answers may give an approximate solution.<br> 
+<br>
+upd4:<br>
+Great optimization, faster running speed and faster convergence speed.<br>
