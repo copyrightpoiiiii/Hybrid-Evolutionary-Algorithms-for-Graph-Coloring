@@ -36,6 +36,7 @@ struct conflict_point {
 } rec_point[maxn];
 
 int tabutable[maxn][maxn];
+int point_pos[maxn];
 int rec_point_size;
 int head[maxn], tot, m, n, gene_size, color_size;
 
@@ -200,8 +201,10 @@ int f(gene p) {
     int ans = 0;
     int color[maxn];
     for (int i = 1; i <= p.size; i++)
-        for (int j = 0; j < p.v[i].a.size(); j++)
+        for (int j = 0; j < p.v[i].a.size(); j++) {
             color[p.v[i].a[j]] = i;
+            point_pos[p.v[i].a[j]] = j;
+        }
     int l = 0, r = 1;
     int q[maxm];
     q[1] = 1;
@@ -288,25 +291,22 @@ void localSearch(gene &p, int iter) {
     int best_fun = f(best_res);
     memset(tabutable, 0x3f, sizeof(tabutable));
     while (iter--) {
-        int tl, v = 1, nb = solve_CFL(p), new_pri = -1, new_pri_f, sec_new_pri_f, sec_new_pri = -1;
+        int tl, v = 1, nb = solve_CFL(p), new_pri = -1, new_pri_f;
         tl = rand() % A + arf * nb;
         find(p);
         if (!rec_point_size)return;
         while (v <= rec_point_size) {
             new_pri_f = f(p);
-            for (int i = 0; i < p.v[rec_point[v].pri].a.size(); i++)
-                if (p.v[rec_point[v].pri].a[i] == rec_point[v].id) {
-                    p.v[rec_point[v].pri].a.erase(p.v[rec_point[v].pri].a.begin() + i);
-                    break;
-                }
+            p.v[rec_point[v].pri].a.erase(p.v[rec_point[v].pri].a.begin() + point_pos[rec_point[v].id]);
             gene tmp_p;
             for (int i = 1; i <= p.size; i++)
                 if (i != rec_point[v].pri && (tabutable[rec_point[v].id][i] >= iter)) {
                     tmp_p = p;
                     tmp_p.v[i].a.push_back(rec_point[v].id);
-                    if (f(tmp_p) < new_pri_f) {
+                    int tmp_p_answer = f(tmp_p);
+                    if (tmp_p_answer < new_pri_f) {
                         new_pri = i;
-                        new_pri_f = f(tmp_p);
+                        new_pri_f = tmp_p_answer;
                     }
                 }
             if (new_pri == -1) {
@@ -319,9 +319,10 @@ void localSearch(gene &p, int iter) {
             return;
         }
         p.v[new_pri].a.push_back(rec_point[v].id);
-        if (f(p) <= best_fun) {
+        int tmp_answer = f(p);
+        if (tmp_answer <= best_fun) {
             best_res = p;
-            best_fun = f(p);
+            best_fun = tmp_answer;
         }
         tabutable[rec_point[v].id][rec_point[v].pri] = iter - tl;
         if (judge(p))
