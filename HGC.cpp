@@ -288,12 +288,13 @@ void localSearch(gene &p, int iter) {
     int best_fun = f(best_res);
     memset(tabutable, 0x3f, sizeof(tabutable));
     while (iter--) {
+        //cout<<"LS: "<<iter<<endl;
         int tl, v = 1, nb = solve_CFL(p), new_pri = -1, new_pri_f;
         tl = rand() % A + arf * nb;
         find(p);
         if (!rec_point_size)return;
         while (v <= rec_point_size) {
-            new_pri_f = 0x7ffff;
+            new_pri_f = f(p);
             for (int i = 0; i < p.v[rec_point[v].pri].a.size(); i++)
                 if (p.v[rec_point[v].pri].a[i] == rec_point[v].id) {
                     p.v[rec_point[v].pri].a.erase(p.v[rec_point[v].pri].a.begin() + i);
@@ -301,9 +302,9 @@ void localSearch(gene &p, int iter) {
                 }
             gene tmp_p;
             for (int i = 1; i <= p.size; i++)
-                if (i != rec_point[v].pri && (tabutable[v][i] >= iter)) {
+                if (i != rec_point[v].pri && (tabutable[rec_point[v].id][i] >= iter)) {
                     tmp_p = p;
-                    tmp_p.v[i].a.push_back(v);
+                    tmp_p.v[i].a.push_back(rec_point[v].id);
                     if (f(tmp_p) < new_pri_f) {
                         new_pri = i;
                         new_pri_f = f(tmp_p);
@@ -320,10 +321,11 @@ void localSearch(gene &p, int iter) {
             return;
         }
         p.v[new_pri].a.push_back(rec_point[v].id);
-        if (f(p) < best_fun) {
+        if (f(p) <= best_fun) {
             best_res = p;
             best_fun = f(p);
         }
+        //cout<<best_fun<<" "<<f(p)<<endl;
         tabutable[rec_point[v].id][rec_point[v].pri] = iter - tl;
         if (judge(p))
             return;
@@ -385,6 +387,7 @@ bool check(int x) {
         gene ps;
         crossover(P[p1], P[p2], ps);
         localSearch(ps, L_LS);
+        //cout<<"check: "<<stop_cond<<" "<<f(ps)<<endl;
         if (judge(ps)) {
             ans_p = ps;
             return 1;
@@ -405,8 +408,9 @@ void output_gene(gene p) {
 }
 
 int main() {
-    //freopen("input.txt", "r", stdin);
-    //freopen("output.txt", "w", stdout);
+    freopen("input.txt", "r", stdin);
+    freopen("output.txt", "w", stdout);
+    srand((unsigned)time(NULL));
     init();
     int l = 1, r = n;
     while (l <= r) {
@@ -415,7 +419,7 @@ int main() {
         init_gen(mid, init_size);
         if (check(mid))r = mid - 1;
         else l = mid + 1;
-        cout << mid << endl;
+        //cout << mid << endl;
     }
     output_gene(ans_p);
     return 0;
