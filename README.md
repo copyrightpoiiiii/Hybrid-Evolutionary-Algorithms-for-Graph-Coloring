@@ -14,7 +14,7 @@ However, I found the LS operator had no obvious effect on the optimization of th
 <br>
 upd2:<br>
 Through some tiny changes, the LS operator can make some remarkable optimizations.<br>
-But I am not sure whether this operation can accept a poor solution.
+But I am not sure whether this operation can accept a poor solution.<br>
 <br>
 upd3:<br>
 Now, there are two main problems needs to be solved.<br>
