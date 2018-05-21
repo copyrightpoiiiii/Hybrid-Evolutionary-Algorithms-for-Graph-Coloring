@@ -219,7 +219,7 @@ int f(gene p) {
             }
         }
     }
-    return ans/2;
+    return ans / 2;
 }
 
 void find(gene p) {
@@ -288,8 +288,7 @@ void localSearch(gene &p, int iter) {
     int best_fun = f(best_res);
     memset(tabutable, 0x3f, sizeof(tabutable));
     while (iter--) {
-        //cout<<"LS: "<<iter<<endl;
-        int tl, v = 1, nb = solve_CFL(p), new_pri = -1, new_pri_f;
+        int tl, v = 1, nb = solve_CFL(p), new_pri = -1, new_pri_f, sec_new_pri_f, sec_new_pri = -1;
         tl = rand() % A + arf * nb;
         find(p);
         if (!rec_point_size)return;
@@ -310,11 +309,10 @@ void localSearch(gene &p, int iter) {
                         new_pri_f = f(tmp_p);
                     }
                 }
-            if(new_pri==-1) {
+            if (new_pri == -1) {
                 p.v[rec_point[v].pri].a.push_back(rec_point[v].id);
                 v++;
-            }
-            else break;
+            } else break;
         }
         if (new_pri == -1) {
             p = best_res;
@@ -325,7 +323,6 @@ void localSearch(gene &p, int iter) {
             best_res = p;
             best_fun = f(p);
         }
-        //cout<<best_fun<<" "<<f(p)<<endl;
         tabutable[rec_point[v].id][rec_point[v].pri] = iter - tl;
         if (judge(p))
             return;
@@ -360,10 +357,10 @@ void optimize() {
     for (int i = 1; i <= gene_size; i++)
         for (int j = 1; j <= gene_size; j++)
             if (i != j) {
-                min_dis[i] = min(min_dis[i], dis(P[i], P[j]));
+                min_dis[i] = min(min_dis[i], min(dis(P[i], P[j]), dis(P[j], P[i])));
             }
     long double max_index = 0;
-    int max_id;
+    int max_id = gene_size;
     for (int i = 1; i <= gene_size; i++) {
         s_gene[i] += pow(E, (long double) 0.08 * n * (long double) n / min_dis[i]);
         if (s_gene[i] > max_index) {
@@ -387,7 +384,6 @@ bool check(int x) {
         gene ps;
         crossover(P[p1], P[p2], ps);
         localSearch(ps, L_LS);
-        //cout<<"check: "<<stop_cond<<" "<<f(ps)<<endl;
         if (judge(ps)) {
             ans_p = ps;
             return 1;
@@ -408,9 +404,10 @@ void output_gene(gene p) {
 }
 
 int main() {
+    ios_base::sync_with_stdio(false);
     freopen("input.txt", "r", stdin);
     freopen("output.txt", "w", stdout);
-    srand((unsigned)time(NULL));
+    srand((unsigned) time(NULL));
     init();
     int l = 1, r = n;
     while (l <= r) {
@@ -419,7 +416,6 @@ int main() {
         init_gen(mid, init_size);
         if (check(mid))r = mid - 1;
         else l = mid + 1;
-        //cout << mid << endl;
     }
     output_gene(ans_p);
     return 0;
