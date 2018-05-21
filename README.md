@@ -11,3 +11,7 @@ I hope you can help me.<br>
 upd1:<br>
 Now, the code can run normally.<br>
 However, I found the LS operator had no obvious effect on the optimization of the answer.<br>
+<br>
+upd2:<br>
+Through some tiny changes, the LS operator can make some remarkable optimizations.<br>
+But I am not sure whether this operation can accept a poor solution.
