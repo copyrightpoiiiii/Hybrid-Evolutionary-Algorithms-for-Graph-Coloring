@@ -15,3 +15,8 @@ However, I found the LS operator had no obvious effect on the optimization of th
 upd2:<br>
 Through some tiny changes, the LS operator can make some remarkable optimizations.<br>
 But I am not sure whether this operation can accept a poor solution.
+<br>
+upd3:<br>
+Now, there are two main problems needs to be solved.<br>
+First, the time complexity of LS operator is too high.<br>
+Second, the algorithm to solve the distance between two answers may give an approximate solution.<br> 
