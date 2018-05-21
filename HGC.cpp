@@ -32,7 +32,7 @@ struct gene {
 } P[maxn], ans_p;
 
 struct conflict_point {
-    int id, pri;
+    int id, pri, num;
 } rec_point[maxn];
 
 int tabutable[maxn][maxn];
@@ -243,9 +243,9 @@ void find(gene p) {
         int x = q[++l];
         for (int i = head[x], y; i; i = e[i].next) {
             if (color[y = e[i].go] == color[x] && (!rec[x])) {
-                rec[x] = 1;
                 rec_point[++rec_point_size].id = x;
                 rec_point[rec_point_size].pri = color[x];
+                rec[x] = 1;
             }
             if (!book[y]) {
                 q[++r] = y;
@@ -288,43 +288,57 @@ int solve_CFL(gene p) {
 
 void localSearch(gene &p, int iter) {
     gene best_res = p;
-    int best_fun = f(best_res);
+    int best_fun = f(p);
     memset(tabutable, 0x3f, sizeof(tabutable));
     while (iter--) {
-        int tl, v = 1, nb = solve_CFL(p), new_pri = -1, new_pri_f;
+        int tl, v = 1, nb = solve_CFL(p), new_pri = -1, new_pri_f,rec_id=0;
         tl = rand() % A + arf * nb;
         find(p);
         if (!rec_point_size)return;
         while (v <= rec_point_size) {
-            new_pri_f = f(p);
-            p.v[rec_point[v].pri].a.erase(p.v[rec_point[v].pri].a.begin() + point_pos[rec_point[v].id]);
-            gene tmp_p;
+            new_pri_f = n*2;
+            for (int i = 0; i < p.v[rec_point[v].pri].a.size(); i++)
+                if (p.v[rec_point[v].pri].a[i] == rec_point[v].id)
+                    p.v[rec_point[v].pri].a.erase(p.v[rec_point[v].pri].a.begin() + i);
+            int rec_new_color[maxn];
+            memset(rec_new_color,0, sizeof(rec_new_color));
             for (int i = 1; i <= p.size; i++)
                 if (i != rec_point[v].pri && (tabutable[rec_point[v].id][i] >= iter)) {
-                    tmp_p = p;
-                    tmp_p.v[i].a.push_back(rec_point[v].id);
-                    int tmp_p_answer = f(tmp_p);
-                    if (tmp_p_answer < new_pri_f) {
+                    int rec_conflict = 0;
+                    for (int j = 0; j < p.v[i].a.size(); j++)
+                        rec_new_color[p.v[i].a[j]] = i;
+                    for (int j = head[rec_point[v].id]; j; j = e[j].next)
+                        if (rec_new_color[e[j].go] == i)
+                            rec_conflict++;
+                    if (rec_conflict < new_pri_f) {
                         new_pri = i;
-                        new_pri_f = tmp_p_answer;
+                        rec_id=v;
+                        new_pri_f = rec_conflict;
                     }
                 }
-            if (new_pri == -1) {
+            if(new_pri!=-1) {
+                gene tmp_gene = p;
+                tmp_gene.v[new_pri].a.push_back(rec_point[v].id);
+                if(f(tmp_gene)>best_fun)
+                    new_pri=-1;
+            }
+            if(new_pri==-1) {
                 p.v[rec_point[v].pri].a.push_back(rec_point[v].id);
                 v++;
-            } else break;
+            }
+            else break;
         }
         if (new_pri == -1) {
             p = best_res;
             return;
         }
-        p.v[new_pri].a.push_back(rec_point[v].id);
+        p.v[new_pri].a.push_back(rec_point[rec_id].id);
         int tmp_answer = f(p);
         if (tmp_answer <= best_fun) {
             best_res = p;
             best_fun = tmp_answer;
         }
-        tabutable[rec_point[v].id][rec_point[v].pri] = iter - tl;
+        tabutable[rec_point[rec_id].id][rec_point[rec_id].pri] = iter - tl;
         if (judge(p))
             return;
     }
