@@ -23,3 +23,7 @@ Second, the algorithm to solve the distance between two answers may give an appr
 <br>
 upd4:<br>
 Great optimization, faster running speed and faster convergence speed.<br>
+<br>
+upd5:<br>
+In UPD_HGC.cpp, we use some different and better way to Local_Search.<br>
+However, we should accelerate the convergence speed.<br>
