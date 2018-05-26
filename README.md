@@ -27,3 +27,7 @@ Great optimization, faster running speed and faster convergence speed.<br>
 upd5:<br>
 In UPD_HGC.cpp, we use some different and better way to Local_Search.<br>
 However, we should accelerate the convergence speed.<br>
+<br>
+upd6:<br>
+In the new algorithm, I used a new method, which resulted in better time complexity and better spatial complexity.<br>
+But the convergence effect was slower than the old algorithm, and the correctness of the two codes still required further detection. <br>
