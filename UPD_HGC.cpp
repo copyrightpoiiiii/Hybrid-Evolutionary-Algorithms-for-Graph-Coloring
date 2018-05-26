@@ -36,7 +36,6 @@ struct rec_point {
 } conflict_number[maxn];
 int nb_CFL;
 int tabutable[maxn][maxn];
-int point_pos[maxn];
 int head[maxn], tot, m, n, gene_size, color_size;
 
 int read() {
@@ -176,23 +175,10 @@ bool judge(gene p) {
     for (int i = 1; i <= p.size; i++)
         for (int j = 0; j < p.v[i].a.size(); j++)
             color[p.v[i].a[j]] = i;
-    int l = 0, r = 1;
-    int q[maxm];
-    q[1] = 1;
-    int book[maxn];
-    memset(book, 0, sizeof(book));
-    book[1] = 1;
-    while (l != r) {
-        int x = q[++l];
-        for (int i = head[x], y; i; i = e[i].next) {
-            if (color[y = e[i].go] == color[x])
+    for (int i = 1; i <= n; i++)
+        for (int j = head[i]; j; j = e[j].next)
+            if (color[e[j].go] == color[i])
                 return 0;
-            if (!book[y]) {
-                q[++r] = y;
-                book[y] = 1;
-            }
-        }
-    }
     return 1;
 }
 
@@ -200,55 +186,29 @@ int f(gene p) {
     int ans = 0;
     int color[maxn];
     for (int i = 1; i <= p.size; i++)
-        for (int j = 0; j < p.v[i].a.size(); j++) {
+        for (int j = 0; j < p.v[i].a.size(); j++)
             color[p.v[i].a[j]] = i;
-            point_pos[p.v[i].a[j]] = j;
-        }
-    int l = 0, r = 1;
-    int q[maxm];
-    q[1] = 1;
-    int book[maxn];
-    memset(book, 0, sizeof(book));
-    book[1] = 1;
-    while (l != r) {
-        int x = q[++l];
-        for (int i = head[x], y; i; i = e[i].next) {
-            if (color[y = e[i].go] == color[x])
+    for (int i = 1; i <= n; i++)
+        for (int j = head[i]; j; j = e[j].next)
+            if (color[e[j].go] == color[i])
                 ans++;
-            if (!book[y]) {
-                q[++r] = y;
-                book[y] = 1;
-            }
-        }
-    }
     return ans / 2;
 }
 
 void find(gene p) {
     int color[maxn];
+    nb_CFL = 0;
     for (int i = 1; i <= p.size; i++)
         for (int j = 0; j < p.v[i].a.size(); j++) {
             color[p.v[i].a[j]] = i;
             conflict_number[p.v[i].a[j]].color = i;
         }
-    int l = 0, r = 1;
-    int q[maxm];
-    q[1] = 1;
-    int book[maxn];
-    memset(book, 0, sizeof(book));
-    book[1] = 1;
-    while (l != r) {
-        int x = q[++l];
-        conflict_number[x].sum = 0;
-        for (int i = head[x], y; i; i = e[i].next) {
-            if (color[y = e[i].go] == color[x])
-                conflict_number[x].sum++;
-            if (!book[y]) {
-                q[++r] = y;
-                book[y] = 1;
-            }
-        }
-        nb_CFL += conflict_number[x].sum;
+    for (int i = 1; i <= n; i++) {
+        conflict_number[i].sum = 0;
+        for (int j = head[i]; j; j = e[j].next)
+            if (color[e[j].go] == color[i])
+                conflict_number[i].sum++;
+        nb_CFL += conflict_number[i].sum;
     }
     nb_CFL /= 2;
 }
@@ -259,7 +219,7 @@ void localSearch(gene &p, int iter) {
     int best_fun = nb_CFL;
     memset(tabutable, 0x3f, sizeof(tabutable));
     while (iter--) {
-        int tl, v = 1, new_pri = -1, new_pri_f;
+        int tl, new_pri = -1, new_pri_f;
         tl = rand() % A + arf * nb_CFL;
         int max_conflict_point = 1;
         for (int i = 1; i <= n; i++)
@@ -272,9 +232,6 @@ void localSearch(gene &p, int iter) {
         for (int i = 0; i < p.v[color_change].a.size(); i++)
             if (p.v[color_change].a[i] == max_conflict_point)
                 p.v[color_change].a.erase(p.v[color_change].a.begin() + i);
-        for (int i = head[max_conflict_point]; i; i = e[i].next)
-            if (conflict_number[e[i].go].color == color_change)
-                conflict_number[e[i].go].sum--;
         int rec_con_point[maxn];
         memset(rec_con_point, 0, sizeof(rec_con_point));
         for (int i = head[max_conflict_point]; i; i = e[i].next)
@@ -288,9 +245,6 @@ void localSearch(gene &p, int iter) {
             }
         if (new_pri == -1) {
             p.v[color_change].a.push_back(max_conflict_point);
-            for (int i = head[max_conflict_point]; i; i = e[i].next)
-                if (conflict_number[e[i].go].color == color_change)
-                    conflict_number[e[i].go].sum++;
             for (int i = 1; i <= n; i++)
                 if (conflict_number[i].sum > 0) {
                     new_pri_f = conflict_number[i].sum;
@@ -298,16 +252,22 @@ void localSearch(gene &p, int iter) {
                     for (int j = head[i]; j; j = e[j].next)
                         rec_con_point[conflict_number[e[j].go].color]++;
                     for (int j = 1; j <= p.size; j++)
-                        if (j != color_change && tabutable[i][j] >= iter) {
+                        if (j != conflict_number[i].color && tabutable[i][j] >= iter) {
                             if (rec_con_point[j] < new_pri_f) {
                                 new_pri_f = rec_con_point[j];
                                 new_pri = j;
                             }
                         }
                     if (new_pri != -1) {
+                        color_change = conflict_number[i].color;
+                        for (int j = 0; j < p.v[color_change].a.size(); j++)
+                            if (p.v[color_change].a[j] == i)
+                                p.v[color_change].a.erase(p.v[color_change].a.begin() + j);
                         nb_CFL -= conflict_number[i].sum;
                         nb_CFL += new_pri_f;
-                        conflict_number[i].sum = new_pri_f;
+                        for (int j = head[i]; j; j = e[j].next)
+                            if (conflict_number[e[j].go].color == conflict_number[i].color)
+                                conflict_number[e[j].go].sum--;
                         for (int j = head[i]; j; j = e[j].next)
                             if (conflict_number[e[j].go].color == new_pri)
                                 conflict_number[e[j].go].sum++;
@@ -316,31 +276,27 @@ void localSearch(gene &p, int iter) {
                             best_res = p;
                         }
                         tabutable[i][conflict_number[i].color] = iter - tl;
+                        conflict_number[i].sum = new_pri_f;
                         conflict_number[i].color = new_pri;
                         p.v[new_pri].a.push_back(i);
-                        int tm=nb_CFL;
-                        find(p);
-                        cout<<nb_CFL<<" "<<tm<<endl;
-                        cout << "sss" << ": " << f(p) << endl;
                         if (!nb_CFL)
                             return;
                         break;
                     }
                 }
-            if(new_pri==-1) {
+            if (new_pri == -1) {
                 p = best_res;
                 return;
             }
         } else {
+            for (int i = head[max_conflict_point]; i; i = e[i].next)
+                if (conflict_number[e[i].go].color == color_change)
+                    conflict_number[e[i].go].sum--;
             nb_CFL -= conflict_number[max_conflict_point].sum;
             nb_CFL += new_pri_f;
             conflict_number[max_conflict_point].sum = new_pri_f;
             conflict_number[max_conflict_point].color = new_pri;
             p.v[new_pri].a.push_back(max_conflict_point);
-            int tm=nb_CFL;
-            find(p);
-            cout<<nb_CFL<<" "<<tm<<endl;
-            cout << "s: " << f(p) << endl;
             for (int i = head[max_conflict_point]; i; i = e[i].next)
                 if (conflict_number[e[i].go].color == new_pri)
                     conflict_number[e[i].go].sum++;
@@ -410,7 +366,6 @@ bool check(int x) {
         gene ps;
         crossover(P[p1], P[p2], ps);
         localSearch(ps, L_LS);
-        cout << "check: " << f(ps) << endl;
         if (judge(ps)) {
             ans_p = ps;
             return 1;
@@ -443,7 +398,6 @@ int main() {
         init_gen(mid, init_size);
         if (check(mid))r = mid - 1;
         else l = mid + 1;
-        cout << mid << endl;
     }
     output_gene(ans_p);
     return 0;
