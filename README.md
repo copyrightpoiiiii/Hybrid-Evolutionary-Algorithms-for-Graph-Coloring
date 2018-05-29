@@ -31,3 +31,7 @@ However, we should accelerate the convergence speed.<br>
 upd6:<br>
 In the new algorithm, I used a new method, which resulted in better time complexity and better spatial complexity.<br>
 But the convergence effect was slower than the old algorithm, and the correctness of the two codes still required further detection. <br>
+<br>
+upd7:<br>
+Believe it or not, this is the last time it has been optimized.<br>
+After removing the negative optimization brought by a greedy algorithm, the code is very effective.<br>
