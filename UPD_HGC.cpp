@@ -12,7 +12,7 @@
 #define maxm 60000+5
 #define init_size 20
 #define L_LS 2000
-#define L_check 400
+#define L_check 900000
 #define E  2.7182818285
 #define A 10
 #define arf 0.6
@@ -34,6 +34,7 @@ struct gene {
 struct rec_point {
     int color, sum;
 } conflict_number[maxn];
+
 int nb_CFL;
 int tabutable[maxn][maxn];
 int head[maxn], tot, m, n, gene_size, color_size;
@@ -62,7 +63,7 @@ void insert(int u, int v) {
 void init() {
     n = read();
     m = read();
-    //m /= 2;
+    m /= 2;
     for (int i = 1; i <= m; i++) {
         int u = read(), v = read();
         insert(u, v);
@@ -221,90 +222,47 @@ void localSearch(gene &p, int iter) {
     while (iter--) {
         int tl, new_pri = -1, new_pri_f;
         tl = rand() % A + arf * nb_CFL;
-        int max_conflict_point = 1;
-        for (int i = 1; i <= n; i++)
-            if (conflict_number[i].sum > conflict_number[max_conflict_point].sum)
-                max_conflict_point = i;
-        if (!conflict_number[max_conflict_point].sum)
-            return;
-        new_pri_f = conflict_number[max_conflict_point].sum;
-        int color_change = conflict_number[max_conflict_point].color;
-        for (int i = 0; i < p.v[color_change].a.size(); i++)
-            if (p.v[color_change].a[i] == max_conflict_point)
-                p.v[color_change].a.erase(p.v[color_change].a.begin() + i);
+        int color_change, rec_id = 1;
         int rec_con_point[maxn];
-        memset(rec_con_point, 0, sizeof(rec_con_point));
-        for (int i = head[max_conflict_point]; i; i = e[i].next)
-            rec_con_point[conflict_number[e[i].go].color]++;
-        for (int i = 1; i <= p.size; i++)
-            if (i != color_change && tabutable[max_conflict_point][i] >= iter) {
-                if (rec_con_point[i] < new_pri_f) {
-                    new_pri_f = rec_con_point[i];
-                    new_pri = i;
-                }
+        for (int i = 1; i <= n; i++)
+            if (conflict_number[i].sum > 0) {
+                new_pri_f = conflict_number[i].sum;
+                memset(rec_con_point, 0, sizeof(rec_con_point));
+                for (int j = head[i]; j; j = e[j].next)
+                    rec_con_point[conflict_number[e[j].go].color]++;
+                for (int j = 1; j <= p.size; j++)
+                    if (j != conflict_number[i].color && tabutable[i][j] >= iter) {
+                        if (conflict_number[i].sum - rec_con_point[j] > conflict_number[rec_id].sum - new_pri_f) {
+                            new_pri_f = rec_con_point[j];
+                            new_pri = j;
+                            rec_id = i;
+                        }
+                    }
             }
         if (new_pri == -1) {
-            p.v[color_change].a.push_back(max_conflict_point);
-            for (int i = 1; i <= n; i++)
-                if (conflict_number[i].sum > 0) {
-                    new_pri_f = conflict_number[i].sum;
-                    memset(rec_con_point, 0, sizeof(rec_con_point));
-                    for (int j = head[i]; j; j = e[j].next)
-                        rec_con_point[conflict_number[e[j].go].color]++;
-                    for (int j = 1; j <= p.size; j++)
-                        if (j != conflict_number[i].color && tabutable[i][j] >= iter) {
-                            if (rec_con_point[j] < new_pri_f) {
-                                new_pri_f = rec_con_point[j];
-                                new_pri = j;
-                            }
-                        }
-                    if (new_pri != -1) {
-                        color_change = conflict_number[i].color;
-                        for (int j = 0; j < p.v[color_change].a.size(); j++)
-                            if (p.v[color_change].a[j] == i)
-                                p.v[color_change].a.erase(p.v[color_change].a.begin() + j);
-                        nb_CFL -= conflict_number[i].sum;
-                        nb_CFL += new_pri_f;
-                        for (int j = head[i]; j; j = e[j].next)
-                            if (conflict_number[e[j].go].color == conflict_number[i].color)
-                                conflict_number[e[j].go].sum--;
-                        for (int j = head[i]; j; j = e[j].next)
-                            if (conflict_number[e[j].go].color == new_pri)
-                                conflict_number[e[j].go].sum++;
-                        if (nb_CFL <= best_fun) {
-                            best_fun = nb_CFL;
-                            best_res = p;
-                        }
-                        tabutable[i][conflict_number[i].color] = iter - tl;
-                        conflict_number[i].sum = new_pri_f;
-                        conflict_number[i].color = new_pri;
-                        p.v[new_pri].a.push_back(i);
-                        if (!nb_CFL)
-                            return;
-                        break;
-                    }
-                }
-            if (new_pri == -1) {
-                p = best_res;
-                return;
-            }
+            p = best_res;
+            return;
         } else {
-            for (int i = head[max_conflict_point]; i; i = e[i].next)
-                if (conflict_number[e[i].go].color == color_change)
-                    conflict_number[e[i].go].sum--;
-            nb_CFL -= conflict_number[max_conflict_point].sum;
+            color_change = conflict_number[rec_id].color;
+            for (int j = 0; j < p.v[color_change].a.size(); j++)
+                if (p.v[color_change].a[j] == rec_id)
+                    p.v[color_change].a.erase(p.v[color_change].a.begin() + j);
+            nb_CFL -= conflict_number[rec_id].sum;
             nb_CFL += new_pri_f;
-            conflict_number[max_conflict_point].sum = new_pri_f;
-            conflict_number[max_conflict_point].color = new_pri;
-            p.v[new_pri].a.push_back(max_conflict_point);
-            for (int i = head[max_conflict_point]; i; i = e[i].next)
-                if (conflict_number[e[i].go].color == new_pri)
-                    conflict_number[e[i].go].sum++;
+            for (int j = head[rec_id]; j; j = e[j].next)
+                if (conflict_number[e[j].go].color == color_change)
+                    conflict_number[e[j].go].sum--;
+            for (int j = head[rec_id]; j; j = e[j].next)
+                if (conflict_number[e[j].go].color == new_pri)
+                    conflict_number[e[j].go].sum++;
             if (nb_CFL <= best_fun) {
                 best_fun = nb_CFL;
                 best_res = p;
             }
-            tabutable[max_conflict_point][color_change] = iter - tl;
+            tabutable[rec_id][color_change] = iter - tl;
+            conflict_number[rec_id].sum = new_pri_f;
+            conflict_number[rec_id].color = new_pri;
+            p.v[new_pri].a.push_back(rec_id);
             if (!nb_CFL)
                 return;
         }
@@ -396,6 +354,7 @@ int main() {
         int mid = (l + r) >> 1;
         color_size = mid;
         init_gen(mid, init_size);
+        check(mid);
         if (check(mid))r = mid - 1;
         else l = mid + 1;
     }
