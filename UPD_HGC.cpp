@@ -297,6 +297,7 @@ void optimize() {
     for (int i = 1; i <= gene_size; i++)
         for (int j = 1; j <= gene_size; j++)
             if (i != j) {
+                //此处可以将"min(dis(P[i], P[j]), dis(P[j], P[i]))"换成“dis(P[i], P[j])”或“dis(P[j], P[i])”从而得到更好的时间复杂度
                 min_dis[i] = min(min_dis[i], min(dis(P[i], P[j]), dis(P[j], P[i])));
             }
     long double max_index = 0;
@@ -354,7 +355,6 @@ int main() {
         int mid = (l + r) >> 1;
         color_size = mid;
         init_gen(mid, init_size);
-        check(mid);
         if (check(mid))r = mid - 1;
         else l = mid + 1;
     }
