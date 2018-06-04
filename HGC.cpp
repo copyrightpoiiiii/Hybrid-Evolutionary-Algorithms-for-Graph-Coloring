@@ -8,11 +8,11 @@
 #include <ctime>
 #include <cmath>
 
-#define maxn 500+5
-#define maxm 40000+5
-#define init_size 20
+#define maxn 2000+5
+#define maxm 400000+5
+#define init_size 10
 #define L_LS 2000
-#define L_check 400
+#define L_check 490000
 #define E  2.7182818285
 #define A 10
 #define arf 0.6
@@ -29,27 +29,27 @@ struct grou {
 struct gene {
     int size;
     grou v[maxn];
-} P[maxn], ans_p;
+} P[30], ans_p;
 
-struct conflict_point {
-    int id, pri, num;
-} rec_point[maxn];
+struct rec_point {
+    int color, sum;
+} conflict_number[maxn];
 
+int nb_CFL;
 int tabutable[maxn][maxn];
-int point_pos[maxn];
-int rec_point_size;
 int head[maxn], tot, m, n, gene_size, color_size;
+int conflict_color[maxn][maxn];
 
 int read() {
     int x = 0, f = 1;
-    char ch = getchar();
+    char ch = (char) getchar();
     while (ch < '0' || ch > '9') {
         if (ch == '-')f = -1;
-        ch = getchar();
+        ch = (char) getchar();
     }
     while (ch >= '0' && ch <= '9') {
         x = x * 10 + ch - '0';
-        ch = getchar();
+        ch = (char) getchar();
     }
     return x * f;
 }
@@ -126,7 +126,7 @@ void crossover(gene s1, gene s2, gene &s) {
     s.size = s1.size;
     for (int i = 1; i <= s1.size; i++) {
         memset(book, 0, sizeof(book));
-        int maxnum = 0, maxid;
+        int maxnum = 0, maxid = 1;
         if (i % 2 == 1) {
             for (int j = 1; j <= s1.size; j++)
                 if (s1.v[j].a.size() > maxnum) {
@@ -177,23 +177,10 @@ bool judge(gene p) {
     for (int i = 1; i <= p.size; i++)
         for (int j = 0; j < p.v[i].a.size(); j++)
             color[p.v[i].a[j]] = i;
-    int l = 0, r = 1;
-    int q[maxm];
-    q[1] = 1;
-    int book[maxn];
-    memset(book, 0, sizeof(book));
-    book[1] = 1;
-    while (l != r) {
-        int x = q[++l];
-        for (int i = head[x], y; i; i = e[i].next) {
-            if (color[y = e[i].go] == color[x])
+    for (int i = 1; i <= n; i++)
+        for (int j = head[i]; j; j = e[j].next)
+            if (color[e[j].go] == color[i])
                 return 0;
-            if (!book[y]) {
-                q[++r] = y;
-                book[y] = 1;
-            }
-        }
-    }
     return 1;
 }
 
@@ -201,146 +188,85 @@ int f(gene p) {
     int ans = 0;
     int color[maxn];
     for (int i = 1; i <= p.size; i++)
-        for (int j = 0; j < p.v[i].a.size(); j++) {
+        for (int j = 0; j < p.v[i].a.size(); j++)
             color[p.v[i].a[j]] = i;
-            point_pos[p.v[i].a[j]] = j;
-        }
-    int l = 0, r = 1;
-    int q[maxm];
-    q[1] = 1;
-    int book[maxn];
-    memset(book, 0, sizeof(book));
-    book[1] = 1;
-    while (l != r) {
-        int x = q[++l];
-        for (int i = head[x], y; i; i = e[i].next) {
-            if (color[y = e[i].go] == color[x])
+    for (int i = 1; i <= n; i++)
+        for (int j = head[i]; j; j = e[j].next)
+            if (color[e[j].go] == color[i])
                 ans++;
-            if (!book[y]) {
-                q[++r] = y;
-                book[y] = 1;
-            }
-        }
-    }
     return ans / 2;
 }
 
 void find(gene p) {
-    memset(rec_point, 0, sizeof(rec_point));
-    rec_point_size = 0;
-    int color[maxn], rec[maxn];
-    memset(rec, 0, sizeof(rec));
-    for (int i = 1; i <= p.size; i++)
-        for (int j = 0; j < p.v[i].a.size(); j++)
-            color[p.v[i].a[j]] = i;
-    int l = 0, r = 1;
-    int q[maxm];
-    q[1] = 1;
-    int book[maxn];
-    memset(book, 0, sizeof(book));
-    book[1] = 1;
-    while (l != r) {
-        int x = q[++l];
-        for (int i = head[x], y; i; i = e[i].next) {
-            if (color[y = e[i].go] == color[x] && (!rec[x])) {
-                rec_point[++rec_point_size].id = x;
-                rec_point[rec_point_size].pri = color[x];
-                rec[x] = 1;
-            }
-            if (!book[y]) {
-                q[++r] = y;
-                book[y] = 1;
-            }
-        }
-    }
-}
-
-int solve_CFL(gene p) {
-    int rec[maxn];
     int color[maxn];
+    nb_CFL = 0;
+    memset(conflict_color, 0, sizeof(conflict_color));
     for (int i = 1; i <= p.size; i++)
-        for (int j = 0; j < p.v[i].a.size(); j++)
+        for (int j = 0; j < p.v[i].a.size(); j++) {
             color[p.v[i].a[j]] = i;
-    int l = 0, r = 1;
-    int q[maxm];
-    q[1] = 1;
-    int book[maxn];
-    memset(book, 0, sizeof(book));
-    book[1] = 1;
-    while (l != r) {
-        int x = q[++l];
-        for (int i = head[x], y; i; i = e[i].next) {
-            if (color[y = e[i].go] == color[x]) {
-                rec[x] = 1;
-            }
-            if (!book[y]) {
-                q[++r] = y;
-                book[y] = 1;
-            }
+            conflict_number[p.v[i].a[j]].color = i;
         }
+    for (int i = 1; i <= n; i++) {
+        conflict_number[i].sum = 0;
+        for (int j = head[i]; j; j = e[j].next) {
+            conflict_color[i][color[e[j].go]]++;
+            if (color[e[j].go] == color[i])
+                conflict_number[i].sum++;
+        }
+        nb_CFL += conflict_number[i].sum;
     }
-    int sum = 0;
-    for (int i = 1; i <= n; i++)
-        if (rec[i])
-            sum++;
-    return sum;
+    nb_CFL /= 2;
 }
 
 void localSearch(gene &p, int iter) {
     gene best_res = p;
-    int best_fun = f(p);
+    find(p);
+    int best_fun = nb_CFL;
     memset(tabutable, 0x3f, sizeof(tabutable));
     while (iter--) {
-        int tl, v = 1, nb = solve_CFL(p), new_pri = -1, new_pri_f,rec_id=0;
-        tl = rand() % A + arf * nb;
-        find(p);
-        if (!rec_point_size)return;
-        while (v <= rec_point_size) {
-            new_pri_f = n*2;
-            for (int i = 0; i < p.v[rec_point[v].pri].a.size(); i++)
-                if (p.v[rec_point[v].pri].a[i] == rec_point[v].id)
-                    p.v[rec_point[v].pri].a.erase(p.v[rec_point[v].pri].a.begin() + i);
-            int rec_new_color[maxn];
-            memset(rec_new_color,0, sizeof(rec_new_color));
-            for (int i = 1; i <= p.size; i++)
-                if (i != rec_point[v].pri && (tabutable[rec_point[v].id][i] >= iter)) {
-                    int rec_conflict = 0;
-                    for (int j = 0; j < p.v[i].a.size(); j++)
-                        rec_new_color[p.v[i].a[j]] = i;
-                    for (int j = head[rec_point[v].id]; j; j = e[j].next)
-                        if (rec_new_color[e[j].go] == i)
-                            rec_conflict++;
-                    if (rec_conflict < new_pri_f) {
-                        new_pri = i;
-                        rec_id=v;
-                        new_pri_f = rec_conflict;
+        int tl, new_pri = -1, new_pri_f = n * n;
+        tl = rand() % A + arf * nb_CFL;
+        int color_change, rec_id = 1;
+        for (int i = 1; i <= n; i++)
+            if (conflict_number[i].sum > 0) {
+                for (int j = 1; j <= p.size; j++)
+                    if (j != conflict_number[i].color && tabutable[i][j] >= iter) {
+                        if (conflict_number[i].sum - conflict_color[i][j] > conflict_number[rec_id].sum - new_pri_f) {
+                            new_pri_f = conflict_color[i][j];
+                            new_pri = j;
+                            rec_id = i;
+                        }
                     }
-                }
-            if(new_pri!=-1) {
-                gene tmp_gene = p;
-                tmp_gene.v[new_pri].a.push_back(rec_point[v].id);
-                if(f(tmp_gene)>best_fun)
-                    new_pri=-1;
             }
-            if(new_pri==-1) {
-                p.v[rec_point[v].pri].a.push_back(rec_point[v].id);
-                v++;
-            }
-            else break;
-        }
         if (new_pri == -1) {
             p = best_res;
             return;
+        } else {
+            color_change = conflict_number[rec_id].color;
+            for (int j = 0; j < p.v[color_change].a.size(); j++)
+                if (p.v[color_change].a[j] == rec_id)
+                    p.v[color_change].a.erase(p.v[color_change].a.begin() + j);
+            nb_CFL -= conflict_number[rec_id].sum;
+            nb_CFL += new_pri_f;
+            for (int j = head[rec_id]; j; j = e[j].next) {
+                if (conflict_number[e[j].go].color == color_change)
+                    conflict_number[e[j].go].sum--;
+                else if (conflict_number[e[j].go].color == new_pri)
+                    conflict_number[e[j].go].sum++;
+                conflict_color[e[j].go][color_change]--;
+                conflict_color[e[j].go][new_pri]++;
+            }
+            if (nb_CFL <= best_fun) {
+                best_fun = nb_CFL;
+                best_res = p;
+            }
+            tabutable[rec_id][color_change] = iter - tl;
+            conflict_number[rec_id].sum = new_pri_f;
+            conflict_number[rec_id].color = new_pri;
+            p.v[new_pri].a.push_back(rec_id);
+            if (!nb_CFL)
+                return;
         }
-        p.v[new_pri].a.push_back(rec_point[rec_id].id);
-        int tmp_answer = f(p);
-        if (tmp_answer <= best_fun) {
-            best_res = p;
-            best_fun = tmp_answer;
-        }
-        tabutable[rec_point[rec_id].id][rec_point[rec_id].pri] = iter - tl;
-        if (judge(p))
-            return;
     }
     p = best_res;
 }
@@ -372,7 +298,7 @@ void optimize() {
     for (int i = 1; i <= gene_size; i++)
         for (int j = 1; j <= gene_size; j++)
             if (i != j) {
-                min_dis[i] = min(min_dis[i], min(dis(P[i], P[j]), dis(P[j], P[i])));
+                min_dis[i] = min(min_dis[i], dis(P[i], P[j]));
             }
     long double max_index = 0;
     int max_id = gene_size;
